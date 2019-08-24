@@ -1,11 +1,11 @@
 const fromHexString = hexString => new Uint8Array(hexString.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
 const toHexString = bytes => bytes.reduce((str, byte) => str + byte.toString(16).padStart(2, '0'), '');
 
-const wasm_data_buffer = fromHexString(wasm_data);
+const monero_wasm_data_buffer = fromHexString(monero_wasm_data);
 
-var Module = {
+var XMRModule = {
   instantiateWasm: function(imports, successCallback) {
-    var wasmInstantiate = WebAssembly.instantiate(wasm_data_buffer, imports).then(function(output) {
+    var wasmInstantiate = WebAssembly.instantiate(monero_wasm_data_buffer, imports).then(function(output) {
       successCallback(output.instance);
     }).catch(function(e) {
       console.log('wasm instantiation failed! ' + e);
@@ -16,33 +16,33 @@ var Module = {
 
 sc_reduce32 = function(data) {
     var dataLen = data.length * data.BYTES_PER_ELEMENT;
-    var dataPtr = Module._malloc(dataLen);
-    var dataHeap = new Uint8Array(Module.HEAPU8.buffer, dataPtr, dataLen);
+    var dataPtr = XMRModule._malloc(dataLen);
+    var dataHeap = new Uint8Array(XMRModule.HEAPU8.buffer, dataPtr, dataLen);
     dataHeap.set(data);
-    Module.ccall('sc_reduce32', null, ['number'], [dataHeap.byteOffset]);
+    XMRModule.ccall('sc_reduce32', null, ['number'], [dataHeap.byteOffset]);
     var res = new Uint8Array(dataHeap);
-    Module._free(dataHeap.byteOffset);
+    XMRModule._free(dataHeap.byteOffset);
     return res;
 };
 
 secret_key_to_public_key = function(data) {
     var outLen = data.length * data.BYTES_PER_ELEMENT;
-    var outPtr = Module._malloc(outLen);
-    var outHeap = new Uint8Array(Module.HEAPU8.buffer, outPtr, outLen);
-    var ok = Module.ccall('secret_key_to_public_key', 'boolean', ['array', 'number'], [data, outHeap.byteOffset]);
+    var outPtr = XMRModule._malloc(outLen);
+    var outHeap = new Uint8Array(XMRModule.HEAPU8.buffer, outPtr, outLen);
+    var ok = XMRModule.ccall('secret_key_to_public_key', 'boolean', ['array', 'number'], [data, outHeap.byteOffset]);
     var res = null;
     if (ok) res = new Uint8Array(outHeap);
-    Module._free(outHeap.byteOffset);
+    XMRModule._free(outHeap.byteOffset);
     return res;
 };
 
 cn_fast_hash = function(data) {
     var outLen = 32;
-    var outPtr = Module._malloc(outLen);
-    var outHeap = new Uint8Array(Module.HEAPU8.buffer, outPtr, outLen);
-    Module.ccall('cn_fast_hash', null, ['array', 'number', 'number'], [data, data.length * data.BYTES_PER_ELEMENT, outHeap.byteOffset]);
+    var outPtr = XMRModule._malloc(outLen);
+    var outHeap = new Uint8Array(XMRModule.HEAPU8.buffer, outPtr, outLen);
+    XMRModule.ccall('cn_fast_hash', null, ['array', 'number', 'number'], [data, data.length * data.BYTES_PER_ELEMENT, outHeap.byteOffset]);
     var res = new Uint8Array(outHeap);
-    Module._free(outHeap.byteOffset);
+    XMRModule._free(outHeap.byteOffset);
     return res;
 };
 
@@ -52,32 +52,32 @@ hash_to_scalar = function(data) {
 
 get_subaddress_secret_key = function(data, major, minor) {
     var outLen = 32;
-    var outPtr = Module._malloc(outLen);
-    var outHeap = new Uint8Array(Module.HEAPU8.buffer, outPtr, outLen);
-    Module.ccall('get_subaddress_secret_key', null, ['array', 'number', 'number', 'number'], [data, major, minor, outHeap.byteOffset]);
+    var outPtr = XMRModule._malloc(outLen);
+    var outHeap = new Uint8Array(XMRModule.HEAPU8.buffer, outPtr, outLen);
+    XMRModule.ccall('get_subaddress_secret_key', null, ['array', 'number', 'number', 'number'], [data, major, minor, outHeap.byteOffset]);
     var res = new Uint8Array(outHeap);
-    Module._free(outHeap.byteOffset);
+    XMRModule._free(outHeap.byteOffset);
     return res;
 };
 
 sc_add = function(data1, data2) {
     var outLen = 32;
-    var outPtr = Module._malloc(outLen);
-    var outHeap = new Uint8Array(Module.HEAPU8.buffer, outPtr, outLen);
-    Module.ccall('sc_add', null, ['number', 'array', 'array'], [outHeap.byteOffset, data1, data2]);
+    var outPtr = XMRModule._malloc(outLen);
+    var outHeap = new Uint8Array(XMRModule.HEAPU8.buffer, outPtr, outLen);
+    XMRModule.ccall('sc_add', null, ['number', 'array', 'array'], [outHeap.byteOffset, data1, data2]);
     var res = new Uint8Array(outHeap);
-    Module._free(outHeap.byteOffset);
+    XMRModule._free(outHeap.byteOffset);
     return res;
 };
 
 scalarmultKey = function(P, a) {
     var outLen = 32;
-    var outPtr = Module._malloc(outLen);
-    var outHeap = new Uint8Array(Module.HEAPU8.buffer, outPtr, outLen);
-    var ok = Module.ccall('scalarmultKey', 'boolean', ['number', 'array', 'array'], [outHeap.byteOffset, P, a]);
+    var outPtr = XMRModule._malloc(outLen);
+    var outHeap = new Uint8Array(XMRModule.HEAPU8.buffer, outPtr, outLen);
+    var ok = XMRModule.ccall('scalarmultKey', 'boolean', ['number', 'array', 'array'], [outHeap.byteOffset, P, a]);
     var res = null;
     if (ok) res = new Uint8Array(outHeap);
-    Module._free(outHeap.byteOffset);
+    XMRModule._free(outHeap.byteOffset);
     return res;
 }
 

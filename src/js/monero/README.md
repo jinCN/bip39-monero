@@ -11,5 +11,7 @@ cd emsdk
 source ./emsdk_env.sh
 
 cd /root/src
-emcc monero-core.c crypto-ops.c crypto-ops-data.c hash.c keccak.c -o monero-core.js -s EXPORTED_FUNCTIONS='["_sc_reduce32", "_secret_key_to_public_key", "_cn_fast_hash", "_get_subaddress_secret_key", "_sc_add", "_scalarmultKey"]' -s EXTRA_EXPORTED_RUNTIME_METHODS='["ccall", "cwrap"]' -s WASM=1
+emcc monero-core.c crypto-ops.c crypto-ops-data.c hash.c keccak.c -o monero-core.js -s EXPORTED_FUNCTIONS='["_sc_reduce32", "_secret_key_to_public_key", "_cn_fast_hash", "_get_subaddress_secret_key", "_sc_add", "_scalarmultKey"]' -s EXTRA_EXPORTED_RUNTIME_METHODS='["ccall", "cwrap"]' -s WASM=1 -s MODULARIZE=1 -s 'EXPORT_NAME="XMRModule"'
+
+./bin2jsdata monero_wasm_data monero-core.wasm > monero-core-wasmdata.js
 
