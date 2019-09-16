@@ -1019,26 +1019,26 @@
                 if (networks[DOM.network.val()].name == "XMR - Monero") {
                     var rawPrivateKey = keyPair.d.toBuffer(32);
                     var rawSecretSpendKey = ethUtil.sha3(rawPrivateKey);
-                    var secretSpendKey = sc_reduce32(rawSecretSpendKey);
-                    var secretViewKey = hash_to_scalar(secretSpendKey);
-                    var publicSpendKey = secret_key_to_public_key(secretSpendKey);
-                    var publicViewKey = secret_key_to_public_key(secretViewKey);
+                    var secretSpendKey = XMRModule.lib.sc_reduce32(rawSecretSpendKey);
+                    var secretViewKey = XMRModule.lib.hash_to_scalar(secretSpendKey);
+                    var publicSpendKey = XMRModule.lib.secret_key_to_public_key(secretSpendKey);
+                    var publicViewKey = XMRModule.lib.secret_key_to_public_key(secretViewKey);
 
-                    DOM.xmrSeedWords.val(secret_spend_key_to_words(secretSpendKey));
+                    DOM.xmrSeedWords.val(XMRModule.lib.secret_spend_key_to_words(secretSpendKey));
 
                     if (index == 0) {
-                        publicSpendKey = secret_key_to_public_key(secretSpendKey);
-                        publicViewKey = secret_key_to_public_key(secretViewKey);
+                        publicSpendKey = XMRModule.lib.secret_key_to_public_key(secretSpendKey);
+                        publicViewKey = XMRModule.lib.secret_key_to_public_key(secretViewKey);
                     } else {
-                        var m = get_subaddress_secret_key(secretViewKey, 0, index);
-                        secretSpendKey = sc_add(m, secretSpendKey);
-                        publicSpendKey = secret_key_to_public_key(secretSpendKey);
-                        publicViewKey = scalarmultKey(publicSpendKey, secretViewKey);
+                        var m = XMRModule.lib.get_subaddress_secret_key(secretViewKey, 0, index);
+                        secretSpendKey = XMRModule.lib.sc_add(m, secretSpendKey);
+                        publicSpendKey = XMRModule.lib.secret_key_to_public_key(secretSpendKey);
+                        publicViewKey = XMRModule.lib.scalarmultKey(publicSpendKey, secretViewKey);
                     }
 
                     privkey = uint8ArrayToHex(secretSpendKey);
                     pubkey = "";
-                    address = pub_keys_to_address(MONERO_MAINNET, index != 0, publicSpendKey, publicViewKey);
+                    address = XMRModule.lib.pub_keys_to_address(XMRModule.lib.MONERO_MAINNET, index != 0, publicSpendKey, publicViewKey);
                 }
 
                 addAddressToList(indexText, address, pubkey, privkey);
