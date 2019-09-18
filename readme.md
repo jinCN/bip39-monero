@@ -1,99 +1,109 @@
-# Coinomi BIP39 Fork Info
+# Coinomi BIP39 XMR Support
+
+## Summary
 
 Forked from https://github.com/iancoleman/bip39/
 
-Added BIP39 support for XMR.
+Supports seeds used by the Coinomi wallet, Ledger hardware wallets and should
+be compatible with other wallets too that use BIP39 (not tested).
 
-# BIP39 Tool
+WARNING! DO NOT ENTER YOUR SEED PHRASE INTO ANY INTERNET WEB PAGE!
 
-A tool for converting BIP39 mnemonic phrases to addresses and private keys.
-
-## Online Version
-
-https://iancoleman.io/bip39/
-
-## Standalone offline version
-
-Download `bip39-standalone.html` from
-[the releases](https://github.com/iancoleman/bip39/releases).
-
-Open the file in a browser by double clicking it.
-
-This can be compiled from source using the command `python compile.py`
+The right way to use this tool is to download the single html page (index.html)
+locally, disconnect from the internet, open a browser in incognito mode and
+drag the index.html file in it to open. These are minimum precautions, if in
+doubt ask someone you know and trust (but don't give them the seed).
 
 ## Usage
 
-Enter your BIP39 phrase into the 'BIP39 Phrase' field, or press
-'Generate Random Phrase'
+- Open the index.html page in a browser.
+- Type your seed in the text area next to `BIP39 Mnemonic`. For a demo, just
+  click `Generate` for a random mnemonic.
+- Choose `XMR - Monero` in the `Coin` select dropdown.
+- Get the XMR wallet seed words (25 words) next to `XMR Seed Words`. Putting
+  this 25-word seed into any Monero wallet (CLI or GUI) will restore the wallet.
 
-If required, set the derivation path, although the defaults are quite usable.
+## How it works
 
-See the table for a list of addresses generated from the phrase.
+This fork adds support for XMR private spend key derivation according to the
+following sources:
 
-Toggle columns to blank to easily copy/paste a single column of data, eg to
-import private keys into a wallet or supply someone with a list of addresses.
+- https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki
+- https://github.com/satoshilabs/slips/blob/master/slip-0044.md
+- https://github.com/LedgerHQ/ledger-app-monero/tree/master/tools/python
 
-The BIP32 keys can be used at [bip32.org](https://bip32.org) if desired.
+The tricky part with Monero is that it uses a different curve from Bitcoin and
+derivatives (ed25519 vs secp256k1) and the BIP39/44 derivation is modified
+a bit. The steps are:
 
-## Donations
+- Calculate the derivation as usual (e.g. m / 44' / 128' / 0' / 0' )
+- perform an extra SHA3 on the result of the derivation
+- perform sc_reduce32 to the SHA3 result to get a valid ed25519 scalar
 
-Since this project is the efforts of many people, most of which don't appear in
-the obvious places like code or issues, donating to the project itself causes
-significant operational difficulties.
+The BIP44 scheme is also interpreted slightly different to support subaddresses.
+Instead of calculating the derivation for subaddresses directly (from 
+m / 44' / 128' / <account>' / <subaddress>') we always use the derivation
+m / 44' / 128' / <account>' / 0' and we then use the Monero-specific
+subaddress generation (note here that BIP44 account is not the subaddress 
+account mentioned in the Monero core CLI and GUI wallets).
 
-As a result, if you would like to support this project financially you are
-encouraged to donate to one of the many groups that makes the internet a place
-amenable to projects such as this one.
+All the Monero-specific functionality is encapsulated in a single js file which
+requires ES6 and WebAssembly support to function. 
 
-[Donation-accepting organizations and projects](https://en.bitcoin.it/wiki/Donation-accepting_organizations_and_projects)
+## Library Generation (monero.js)
 
-If the list is too difficult to choose from, the EFF is a good choice.
+The basic functions are taken directly from C-source files found in the Monero
+project sources. Some extremely small modifications have been made to the files
+to make standalone compilation easier. Verifying the files is rather easy
+by doing a diff comparison for the following Monero project source files (taken
+from release v0.13):
 
-[Electronic Frontier Foundation](https://supporters.eff.org/donate)
+- `crypto-ops.c`
+- `crypto-ops.h`
+- `hash.c`
+- `hash-ops.h`
+- `keccak.c`
+- `crypto.h`
+- `crypto-ops-data.c`
+- `hash.h`
+- `int-util.h`
+- `keccak.h`
 
-or for a direct bitcoin address, consider donating to the
-[Free Software Foundation](https://www.fsf.org/about/ways-to-donate/)
-at 1PC9aZC4hNX2rmmrt7uHTfYAS3hRbph4UN
+Some of the needed functionality was in C++ files and has been moved into C
+files (very short and easy to inspect):
 
-![alt text](https://static.fsf.org/nosvn/images/bitcoin_qrcodes/fsf.png "FSF Bitcoin Address")
+- `monero-core.c`
+- `monero-core.h`
 
-## Making changes
+Finally, some bridging functions, helper functions and some extra calculations
+are implemented in javascript:
 
-Please do not make modifications to `bip39-standalone.html`, since they will
-be overwritten by `compile.py`.
+- `libmonero.js`
+- `monero-words-english.js`
 
-Make changes in `src/*`.
+These files are compiled, mixed and merged into a single `monero.js` final
+product by using a fresh version of emscripten and the `build.sh` script.
+It is possible and easy to tweak the build process to generate pure js code
+instead of webassembly (in asm.js form) for anyone wishing to use this where
+webassembly is not supported.
 
-Changes are applied during release using the command `python compile.py`, so
-please do not commit changes to `bip39-standalone.html`
+For those who do not wish to install emscripten or mess-up their systems, a
+docker setup has been provided that will create an emscripten environment
+supporting the compilation. Using this is very very simple:
 
-# Tests
-
-Tests depend on
-
-* nodejs
-* selenium webdriver - cd /path/to/bip39/tests; npm install
-* selenium driver for firefox ([geckodriver](https://github.com/mozilla/geckodriver/releases)) and / or chrome ([chromedriver](https://sites.google.com/a/chromium.org/chromedriver/downloads))
-* jasmine - npm install --global jasmine
-
-Before running tests, the site must be served at http://localhost:8000.
+Assuming current dir is `bip39-monero/src/js/monero`:
 
 ```
-$ cd /path/to/bip39/src
-$ python -m http.server
-
-or for python2
-$ python -m SimpleHTTPServer
+sudo docker build -t emscripten ./docker
+sudo docker run -it --rm -v $(pwd):/root/src emscripten bash
 ```
 
-Run tests from the command-line
+While inside the docker container do:
 
 ```
-$ cd /path/to/bip39/tests
-$ jasmine spec/tests.js
+source /root/emsdk/emsdk_env.sh
+cd /root/src
+./build.sh
+exit
 ```
 
-# License
-
-This BIP39 tool is released under the terms of the MIT license. See LICENSE for
-more information or see https://opensource.org/licenses/MIT.
