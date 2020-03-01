@@ -101,6 +101,7 @@ Module.lib.scalarmultKey = scalarmultKey;
 
 function base58_encode(data) {
     var ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
+    var BYTES_TO_LENGTHS = [0, 2, 3, 5, 6, 7, 9, 10, 11];
     var ALPHABET_MAP = {}
     var BASE = ALPHABET.length
 
@@ -130,7 +131,7 @@ function base58_encode(data) {
 
         var res = '';
         // deal with leading zeros
-        for (var k = 0; data[pos + k] === 0 && k < len - 1; ++k) res += ALPHABET[0]
+        for (var k = digits.length; k < BYTES_TO_LENGTHS[len]; ++k) res += ALPHABET[0]
         // convert digits to a string
         for (var q = digits.length - 1; q >= 0; --q) res += ALPHABET[digits[q]]
         return res;

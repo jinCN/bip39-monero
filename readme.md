@@ -102,8 +102,8 @@ While inside the docker container do:
 
 ```
 source /root/emsdk/emsdk_env.sh
-cd /root/src
+cd /root/src/src/js/monero
 ./build.sh
+cp monero.js ../monero.js
 exit
 ```
-
